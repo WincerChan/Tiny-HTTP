@@ -94,7 +94,7 @@ class HttpServer(EchoServer):
     def __call__(self):
         self.sock = socket(self.family, self.type_)
         self.sock.bind((self.addr, self.port))
-        print('Listen in %s porn.' % self.port)
+        print('Listening in %s port.' % self.port)
         self._run()
 
 
