@@ -2,6 +2,7 @@ from socket import AF_INET, SOCK_STREAM, socket
 from sys import argv
 import logging
 from threading import Thread, current_thread
+from os import listdir, path as p
 
 logging.basicConfig(level=logging.INFO,
                     format='%(asctime)s %(levelname)s [%(threadName)s] %(message)s')
@@ -26,11 +27,9 @@ TYPE = {
 
 
 def list_files():
-    from os import listdir, path as p
     html = '<h1>%s dictory.</h1><hr/><ul>' % Signal.path
 
     for file in listdir('.' + Signal.path):
-        print(Signal.path + file)
         if p.isdir('.'+Signal.path + file):
             file += '/'
         html += '<li style="font-size: 1.2em"><a href=%s>%s</a></li>' % (
@@ -39,13 +38,17 @@ def list_files():
 
 
 def parse_url(url, file_lengths)->str:
+    params = {}
     if Signal.isdir:
         content_type = 'text/html'
     else:
         path = url.decode('utf-8').split(' ')[1]
         suffix = path.split('.')[-1]
         content_type = TYPE.get(suffix, 'application/octet-stream')
-    params = {}
+    # 目录名
+    if p.isdir('.'+Signal.path) and not Signal.path.endswith('/'):
+        Signal.path += '/'
+        params['Location'] = Signal.path
     params['Content-Length'] = file_lengths
     params['Content-Type'] = content_type
     params['Date'] = 'Sun, 29 Jul 2018 00:30:00 GMT'
@@ -105,7 +108,6 @@ class HttpServer(EchoServer):
     def _open_file(self, req_head):
         req = req_head.decode('utf-8')
         Signal.path = req.split(' ')[1]
-        # Signal.currentpath = self.path.split('/')[-1] + '/'
         try:
             open('.%s' % Signal.path, 'rb')
             Signal.isdir = False
@@ -133,14 +135,22 @@ class HttpServer(EchoServer):
             else:
                 for x in fp:
                     yield x
-        else:
+        elif self.status == 404:
             yield b'404 File Not Found.'
+        elif self.status == 405:
+            yield b'405 Not Allowed Method.'
+        elif self.status == 301:
+            yield ('301 to %s' % Signal.path).encode('ascii')
 
     def _get_head(self, head):
         file_length = self._open_file(head)
         params = parse_url(head, file_length)
-        headers = 'HTTP/1.1 {}\r\n'.format(self.status)
+        headers = 'HTTP/1.1 STATUS_CODE\r\n'
+        if not head.startswith(b'GET'):
+            self.status = 405
         for key, value in params.items():
+            if key == 'Location':
+                self.status = 301
             if value:
                 headers += '{}: {}\r\n'.format(key, value)
 
@@ -154,11 +164,10 @@ class HttpServer(EchoServer):
         else:
             if not req_head:
                 return
-            if req_head.startswith(b'GET'):
-                head = self._get_head(req_head)
-                sock.send(head.encode('ascii'))
-                print(head.encode('ascii'))
-                self._get_body(sock)
+            head = self._get_head(req_head)
+            head = head.replace('STATUS_CODE', str(self.status))
+            sock.send(head.encode('ascii'))
+            self._get_body(sock)
         sock.close()
 
     def __call__(self):
