@@ -9,12 +9,33 @@ logging.basicConfig(level=logging.INFO,
 
 class Signal:
     go = True
+    isText = False
 
 
-def parse_url(url)->str:
+TYPE = {
+    'txt': 'text/plain;',
+    'png': 'image/png;',
+    'jpg': 'image/jpg;',
+    'html': 'text/html;',
+    'js': 'application/javascript;',
+    'css': 'text/css;',
+    'pdf': 'application/pdf;',
+    'gif': 'image/gif'
+}
+
+
+def parse_url(url, file_lengths)->str:
+    path = url.decode('utf-8').split(' ')[1]
+    suffix = path.split('.')[-1]
+    content_type = TYPE.get(suffix, 'application/octet-stream')
+    print(suffix)
     params = {}
-    params['Transfer-Encoding'] = 'chunked'
-    params['Content-Type'] = 'text/plain;'
+    if content_type.startswith('text') and False:
+        Signal.isText = True
+        params['Transfer-Encoding'] = 'chunked'
+    else:
+        params['Content-Length'] = file_lengths
+    params['Content-Type'] = content_type
     params['Date'] = 'Sun, 29 Jul 2018 00:30:00 GMT'
     params['Server'] = 'Python'
     return params
@@ -22,11 +43,17 @@ def parse_url(url)->str:
 
 def transfer_encoding(func):
     def chunked(*args):
-        result, conn = func(*args)
-        lens = hex(len(result))[2:]
-        first = lens.encode('ascii') + b'\r\n'
-        last = b'\r\n0\r\n\r\n'
-        conn.send(first + result + last)
+        result = func(*args)
+        conn = next(result)
+        if Signal.isText:
+            for fp in result:
+                lens = hex(len(fp))[2:]
+                conn.send(lens.encode('ascii') + b'\r\n')
+                conn.send(fp + b'\r\n')
+            conn.send(b'0\r\n\r\n')
+        else:
+            for fp in result:
+                conn.send(fp + b'\r\n')
     return chunked
 
 
@@ -67,14 +94,37 @@ class EchoServer:
 
 
 class HttpServer(EchoServer):
+    def _open_file(self, req_head):
+        req = req_head.decode('utf-8')
+        self.path = req.split(' ')[1]
+        try:
+            open('.%s' % self.path, 'rb')
+        except FileNotFoundError:
+            self.status = 404
+        else:
+            self.status = 200
+            from os.path import getsize
+            return getsize('.%s' % self.path)
+
     @transfer_encoding
     def _get_body(self, conn) -> str:
-        body = 'Hello World'.encode('ascii')
-        return body, conn
+        yield conn
+        if self.status == 200 and Signal.isText:
+            with open('.%s' % self.path, 'rb') as fp:
+                yield fp.readline()
+        elif not Signal.isText:
+            try:
+                with open('.%s' % self.path, 'rb') as fp:
+                    yield fp.read()    
+            except FileNotFoundError:
+                yield b'404 File Not Found.'
+        else:
+            yield b'404 File Not Found.'
 
     def _get_head(self, head):
-        params = parse_url(head)
-        headers = 'HTTP/1.1 200\r\n'
+        file_length = self._open_file(head)
+        params = parse_url(head, file_length)
+        headers = 'HTTP/1.1 {}\r\n'.format(self.status)
         for key, value in params.items():
             if value:
                 headers += '{}: {}\r\n'.format(key, value)
