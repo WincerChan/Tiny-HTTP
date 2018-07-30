@@ -9,6 +9,8 @@ logging.basicConfig(level=logging.INFO,
 
 class Signal:
     go = True
+    isdir = False
+    currentpath = ''
 
 
 TYPE = {
@@ -19,14 +21,28 @@ TYPE = {
     'js': 'application/javascript;',
     'css': 'text/css;',
     'pdf': 'application/pdf;',
-    'gif': 'image/gif'
+    'gif': 'image/gif;',
 }
 
 
+def list_files(path):
+    from os import listdir
+    html = '<h1>%s dictory.</h1><hr/><ul>' % path
+    logging.info("{}".format(path))
+
+    for file in listdir('.' + path):
+        html += '<li><a href=%s>%s</a></li>' % (
+            Signal.currentpath + file, file)
+    return html + '</ul>'
+
+
 def parse_url(url, file_lengths)->str:
-    path = url.decode('utf-8').split(' ')[1]
-    suffix = path.split('.')[-1]
-    content_type = TYPE.get(suffix, 'application/octet-stream')
+    if Signal.isdir:
+        content_type = 'text/html'
+    else:
+        path = url.decode('utf-8').split(' ')[1]
+        suffix = path.split('.')[-1]
+        content_type = TYPE.get(suffix, 'application/octet-stream')
     params = {}
     params['Content-Length'] = file_lengths
     params['Content-Type'] = content_type
@@ -87,12 +103,15 @@ class HttpServer(EchoServer):
     def _open_file(self, req_head):
         req = req_head.decode('utf-8')
         self.path = req.split(' ')[1]
+        Signal.currentpath = self.path.split('/')[-1] + '/'
         try:
             open('.%s' % self.path, 'rb')
+            Signal.isdir = False
         except FileNotFoundError:
             self.status = 404
         except IsADirectoryError:
-            pass
+            Signal.isdir = True
+            self.status = 200
         else:
             self.status = 200
             from os.path import getsize
@@ -104,8 +123,13 @@ class HttpServer(EchoServer):
         if self.status == 200:
             try:
                 fp = open('.%s' % self.path, 'rb')
+                Signal.isdir = False
             except IsADirectoryError:
-                pass
+                Signal.isdir = True
+                logging.info('currentpath={},self.path={}'.format(
+                    Signal.currentpath, self.path))
+                html = list_files(self.path)
+                yield html.encode('ascii')
             else:
                 for x in fp:
                     yield x
