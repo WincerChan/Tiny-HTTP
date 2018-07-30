@@ -9,7 +9,6 @@ logging.basicConfig(level=logging.INFO,
 
 class Signal:
     go = True
-    isText = False
 
 
 TYPE = {
@@ -28,13 +27,8 @@ def parse_url(url, file_lengths)->str:
     path = url.decode('utf-8').split(' ')[1]
     suffix = path.split('.')[-1]
     content_type = TYPE.get(suffix, 'application/octet-stream')
-    print(suffix)
     params = {}
-    if content_type.startswith('text') and False:
-        Signal.isText = True
-        params['Transfer-Encoding'] = 'chunked'
-    else:
-        params['Content-Length'] = file_lengths
+    params['Content-Length'] = file_lengths
     params['Content-Type'] = content_type
     params['Date'] = 'Sun, 29 Jul 2018 00:30:00 GMT'
     params['Server'] = 'Python'
@@ -45,15 +39,11 @@ def transfer_encoding(func):
     def chunked(*args):
         result = func(*args)
         conn = next(result)
-        if Signal.isText:
+        try:
             for fp in result:
-                lens = hex(len(fp))[2:]
-                conn.send(lens.encode('ascii') + b'\r\n')
-                conn.send(fp + b'\r\n')
-            conn.send(b'0\r\n\r\n')
-        else:
-            for fp in result:
-                conn.send(fp + b'\r\n')
+                conn.send(fp)
+        except BrokenPipeError:
+            pass
     return chunked
 
 
@@ -101,6 +91,8 @@ class HttpServer(EchoServer):
             open('.%s' % self.path, 'rb')
         except FileNotFoundError:
             self.status = 404
+        except IsADirectoryError:
+            pass
         else:
             self.status = 200
             from os.path import getsize
@@ -109,15 +101,14 @@ class HttpServer(EchoServer):
     @transfer_encoding
     def _get_body(self, conn) -> str:
         yield conn
-        if self.status == 200 and Signal.isText:
-            with open('.%s' % self.path, 'rb') as fp:
-                yield fp.readline()
-        elif not Signal.isText:
+        if self.status == 200:
             try:
-                with open('.%s' % self.path, 'rb') as fp:
-                    yield fp.read()    
-            except FileNotFoundError:
-                yield b'404 File Not Found.'
+                fp = open('.%s' % self.path, 'rb')
+            except IsADirectoryError:
+                pass
+            else:
+                for x in fp:
+                    yield x
         else:
             yield b'404 File Not Found.'
 
