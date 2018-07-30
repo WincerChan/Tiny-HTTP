@@ -1,4 +1,10 @@
 from socket import AF_INET, SOCK_STREAM, socket
+from sys import argv
+import logging
+from threading import Thread, current_thread
+
+logging.basicConfig(level=logging.INFO,
+                    format='%(asctime)s %(levelname)s [%(threadName)s] %(message)s')
 
 
 class Signal:
@@ -26,7 +32,7 @@ def transfer_encoding(func):
 
 class EchoServer:
     def __init__(self, port=8888, addr='0.0.0.0', family=AF_INET,
-                 type_=SOCK_STREAM, backlog=5, init=True):
+                 type_=SOCK_STREAM, backlog=0, init=True):
         self.addr = addr
         self.port = port
         self.family = family
@@ -37,7 +43,7 @@ class EchoServer:
         while True:
             try:
                 req_head = sock.recv(1)
-                print('Received: ', req_head)
+                # print('Received: ', req_head)
             except BrokenPipeError:
                 break
             else:
@@ -75,34 +81,43 @@ class HttpServer(EchoServer):
 
         return headers + '\r\n'
 
-    def _echo(self, sock):
-        while True:
-            try:
-                req_head = sock.recv(1024)
-                print('Received: ', req_head)
-            except BrokenPipeError:
-                break
-            else:
-                if not req_head:
-                    break
-                if req_head.startswith(b'GET'):
-                    head = self._get_head(req_head)
-                    sock.send(head.encode('ascii'))
-                    print(head.encode('ascii'))
-                    self._get_body(sock)
+    def _echo(self, sock: socket):
+        try:
+            req_head = sock.recv(1024)
+        except BrokenPipeError:
+            return
+        else:
+            if not req_head:
+                return
+            if req_head.startswith(b'GET'):
+                head = self._get_head(req_head)
+                sock.send(head.encode('ascii'))
+                print(head.encode('ascii'))
+                self._get_body(sock)
+        sock.close()
 
     def __call__(self):
         self.sock = socket(self.family, self.type_)
         self.sock.bind((self.addr, self.port))
-        print('Listening in %s port.' % self.port)
+        print('Listening in http://localhost:%s port.' % self.port)
         self._run()
 
 
-serv = HttpServer(port=5174)
+class ThreadHttpServer(HttpServer):
+    def _run(self):
+        self.sock.listen(self.backlog)
+        while True:
+            sock, addr = self.sock.accept()
+            print('Connect by {} Port {}'.format(*addr))
+            Thread(target=self._echo, args=(sock,)).start()
 
-try:
-    serv()
-except KeyboardInterrupt:
-    Signal.go = False
-    print('\x08\x08Good bye', flush=True)
-    exit()
+
+if __name__ == '__main__':
+    port = int(argv[1])
+    serv = ThreadHttpServer(port=port)
+    try:
+        serv()
+    except KeyboardInterrupt:
+        Signal.go = False
+        print('\x08\x08Good bye', flush=True)
+        exit()
