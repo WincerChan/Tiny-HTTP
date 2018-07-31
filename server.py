@@ -1,71 +1,9 @@
 from socket import AF_INET, SOCK_STREAM, socket
-from sys import argv
-import logging
 from threading import Thread, current_thread
-from os import listdir, path as p
+from tools import argv
 
-logging.basicConfig(level=logging.INFO,
-                    format='%(asctime)s %(levelname)s [%(threadName)s] %(message)s')
-
-
-class Signal:
-    go = True
-    isdir = False
-    path = ''
-
-
-TYPE = {
-    'txt': 'text/plain;',
-    'png': 'image/png;',
-    'jpg': 'image/jpg;',
-    'html': 'text/html;',
-    'js': 'application/javascript;',
-    'css': 'text/css;',
-    'pdf': 'application/pdf;',
-    'gif': 'image/gif;',
-}
-
-
-def list_files():
-    html = '<h1>%s dictory.</h1><hr/><ul>' % Signal.path
-
-    for file in listdir('.' + Signal.path):
-        if p.isdir('.'+Signal.path + file):
-            file += '/'
-        html += '<li style="font-size: 1.2em"><a href=%s>%s</a></li>' % (
-            Signal.path + file, file)
-    return html + '</ul>'
-
-
-def parse_url(url, file_lengths)->str:
-    params = {}
-    if Signal.isdir:
-        content_type = 'text/html'
-    else:
-        path = url.decode('utf-8').split(' ')[1]
-        suffix = path.split('.')[-1]
-        content_type = TYPE.get(suffix, 'application/octet-stream')
-    # 目录名
-    if p.isdir('.'+Signal.path) and not Signal.path.endswith('/'):
-        Signal.path += '/'
-        params['Location'] = Signal.path
-    params['Content-Length'] = file_lengths
-    params['Content-Type'] = content_type
-    params['Date'] = 'Sun, 29 Jul 2018 00:30:00 GMT'
-    params['Server'] = 'Python'
-    return params
-
-
-def transfer_encoding(func):
-    def chunked(*args):
-        result = func(*args)
-        conn = next(result)
-        try:
-            for fp in result:
-                conn.send(fp)
-        except BrokenPipeError:
-            pass
-    return chunked
+from tools import (TYPE, Signal, list_files, logging, parse_url,
+                   transfer_encoding)
 
 
 class EchoServer:
@@ -81,14 +19,12 @@ class EchoServer:
         while True:
             try:
                 req_head = sock.recv(1)
-                # print('Received: ', req_head)
             except BrokenPipeError:
                 break
             else:
                 if not req_head:
                     break
                 sock.send(req_head)
-            print('Send: ', req_head)
 
     def _run(self):
         self.sock.listen(self.backlog)
@@ -168,6 +104,11 @@ class HttpServer(EchoServer):
             head = head.replace('STATUS_CODE', str(self.status))
             sock.send(head.encode('ascii'))
             self._get_body(sock)
+            logging.info('HTTP/1.1 %s GET %s' % (self.status, Signal.path))
+            if Signal.debug:
+                print('\nReceived: %s' % req_head)
+                print('\nSend headers: %s' % head)
+                print('-'*36)
         sock.close()
 
     def __call__(self):
@@ -182,12 +123,16 @@ class ThreadHttpServer(HttpServer):
         self.sock.listen(self.backlog)
         while True:
             sock, addr = self.sock.accept()
-            print('Connect by {} Port {}'.format(*addr))
+            # debug
+            if Signal.debug:
+                print('Connect by {} Port {}'.format(*addr))
             Thread(target=self._echo, args=(sock,)).start()
 
 
 if __name__ == '__main__':
-    port = int(argv[1])
+    port = 6789
+    if len(argv) > 1:
+        port = int(argv[1])
     serv = ThreadHttpServer(port=port)
     try:
         serv()
