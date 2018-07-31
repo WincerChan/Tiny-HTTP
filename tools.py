@@ -8,11 +8,12 @@ class Signal:
     isdir = False
     path = ''
     debug = False
+    mode = ''
 
 
 if '--debug' in argv:
     Signal.debug = True
-    logging.basicConfig(level=logging.INFO,
+    logging.basicConfig(level=logging.DEBUG,
                         format=('%(asctime)s %(levelname)s '
                                 '[%(threadName)s] %(message)s'))
     argv.remove('--debug')
@@ -61,15 +62,3 @@ def parse_url(url, file_lengths)->str:
     params['Date'] = 'Sun, 29 Jul 2018 00:30:00 GMT'
     params['Server'] = 'Python'
     return params
-
-
-def transfer_encoding(func):
-    def chunked(*args):
-        result = func(*args)
-        conn = next(result)
-        try:
-            for fp in result:
-                conn.send(fp)
-        except BrokenPipeError:
-            pass
-    return chunked

@@ -1,9 +1,7 @@
 from socket import AF_INET, SOCK_STREAM, socket
 from threading import Thread, current_thread
-from tools import argv
 
-from tools import (TYPE, Signal, list_files, logging, parse_url,
-                   transfer_encoding)
+from tools import TYPE, Signal, argv, list_files, logging, parse_url
 
 
 class EchoServer:
@@ -57,7 +55,6 @@ class HttpServer(EchoServer):
             from os.path import getsize
             return getsize('.%s' % Signal.path)
 
-    @transfer_encoding
     def _get_body(self, conn) -> str:
         yield conn
         if self.status == 200:
@@ -77,6 +74,15 @@ class HttpServer(EchoServer):
             yield b'405 Not Allowed Method.'
         elif self.status == 301:
             yield ('301 to %s' % Signal.path).encode('ascii')
+
+    def _send_body(self, conn):
+        result = self._get_body(conn)
+        conn = next(result)
+        try:
+            for fp in result:
+                conn.send(fp)
+        except BrokenPipeError:
+            pass
 
     def _get_head(self, head):
         file_length = self._open_file(head)
@@ -103,7 +109,7 @@ class HttpServer(EchoServer):
             head = self._get_head(req_head)
             head = head.replace('STATUS_CODE', str(self.status))
             sock.send(head.encode('ascii'))
-            self._get_body(sock)
+            self._send_body(sock)
             logging.info('HTTP/1.1 %s GET %s' % (self.status, Signal.path))
             if Signal.debug:
                 print('\nReceived: %s' % req_head)
@@ -139,4 +145,3 @@ if __name__ == '__main__':
     except KeyboardInterrupt:
         Signal.go = False
         print('\x08\x08Good bye', flush=True)
-        exit()
