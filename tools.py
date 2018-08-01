@@ -50,7 +50,7 @@ def list_files():
 def parse_url(url, file_lengths)->str:
     params = {}
     if Signal.isdir:
-        content_type = 'text/html'
+        content_type = 'text/html;'
     else:
         path = url.decode('utf-8').split(' ')[1]
         suffix = path.split('.')[-1]
@@ -60,7 +60,7 @@ def parse_url(url, file_lengths)->str:
         Signal.path += '/'
         params['Location'] = Signal.path
     params['Content-Length'] = file_lengths
-    params['Content-Type'] = content_type
+    params['Content-Type'] = content_type + 'charset=utf-8'
     params['Date'] = 'Sun, 29 Jul 2018 00:30:00 GMT'
     params['Server'] = 'Python'
     return params
