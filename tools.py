@@ -40,6 +40,8 @@ def list_files():
     for file in listdir('.' + Signal.path):
         if p.isdir('.'+Signal.path + file):
             file += '/'
+        elif file == 'index.html':
+            return open('index.html', 'r').read()
         html += '<li style="font-size: 1.2em"><a href=%s>%s</a></li>' % (
             Signal.path + file, file)
     return html + '</ul>'

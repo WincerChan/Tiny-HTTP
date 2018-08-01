@@ -64,7 +64,7 @@ class HttpServer(EchoServer):
             except IsADirectoryError:
                 Signal.isdir = True
                 html = list_files()
-                yield html.encode('ascii')
+                yield html.encode('utf-8')
             else:
                 for x in fp:
                     yield x
@@ -73,7 +73,7 @@ class HttpServer(EchoServer):
         elif self.status == 405:
             yield b'405 Not Allowed Method.'
         elif self.status == 301:
-            yield ('301 to %s' % Signal.path).encode('ascii')
+            yield ('301 to %s' % Signal.path).encode('utf-8')
 
     def _send_body(self, conn):
         result = self._get_body(conn)
@@ -108,7 +108,7 @@ class HttpServer(EchoServer):
                 return
             head = self._get_head(req_head)
             head = head.replace('STATUS_CODE', str(self.status))
-            sock.send(head.encode('ascii'))
+            sock.send(head.encode('utf-8'))
             self._send_body(sock)
             logging.info('HTTP/1.1 %s GET %s' % (self.status, Signal.path))
             if Signal.debug:
