@@ -1,7 +1,7 @@
 import asyncio
 
-from server import HttpServer
-from tools import TYPE, Signal, argv, list_files, logging, parse_url
+from ..http.server import HttpServer
+from ..tools import Signal, argv, logging
 
 
 class AsyncHttpServer(HttpServer):
@@ -55,7 +55,7 @@ class AsyncHttpServer(HttpServer):
         self._run()
 
 
-if __name__ == '__main__':
+def main():
     port = 6789
     if len(argv) > 1:
         port = int(argv[1])
@@ -66,3 +66,4 @@ if __name__ == '__main__':
     except KeyboardInterrupt:
         Signal.go = False
         print('\x08\x08Good bye', flush=True)
+
