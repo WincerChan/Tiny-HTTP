@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='tinyhttp',
-    version='0.3',
+    version='1.0.0',
     author='Wincer',
     long_description=open('README.rst').read(),
     author_email='WincerChan@gmail.com',
