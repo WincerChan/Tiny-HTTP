@@ -1,6 +1,7 @@
 import logging
 from sys import argv
 from os import listdir, path as p
+from email.utils import formatdate
 
 
 class Signal:
@@ -61,6 +62,6 @@ def parse_url(url, file_lengths)->str:
         params['Location'] = Signal.path
     params['Content-Length'] = file_lengths
     params['Content-Type'] = content_type + 'charset=utf-8'
-    params['Date'] = 'Sun, 29 Jul 2018 00:30:00 GMT'
-    params['Server'] = 'Python'
+    params['Date'] = formatdate(usegmt=True)
+    params['Server'] = 'TinyHttp'
     return params
