@@ -13,7 +13,6 @@ class HttpServer(EchoServer):
         req = req_head.decode('utf-8')
         encode_tmp = req.split(' ')[1]
         Signal.path = unquote(encode_tmp)
-        print('目录是：.%s' % Signal.path)
         try:
             open('.%s' % Signal.path, 'rb')
             Signal.isdir = False

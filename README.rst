@@ -3,7 +3,7 @@ Tiny HTTP
 ===============
 Introduction
 ==============
-A socket-based static HTTP server, Support for asynchronous.
+A socket-based static HTTP server, Support for asynchronous.(Does not support python2)
   
 Install
 ==============

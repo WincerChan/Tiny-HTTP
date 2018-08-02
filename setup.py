@@ -2,10 +2,10 @@ from setuptools import setup, find_packages
 
 setup(
     name='tinyhttp',
-    version='1.0.0',
+    version='1.0.1',
     author='Wincer',
     long_description=open('README.rst').read(),
-    author_email='WincerChan@gmail.com',
+    author_email='WincerChan#gmail.com',
     url='https://github.com/WincerChan/Tiny-Http',
     description='Async static HTTP server.',
     packages=find_packages(),
