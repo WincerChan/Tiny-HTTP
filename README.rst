@@ -13,17 +13,17 @@ Usage
 ==============
 Asynchrous
   
-``pip -m tinyhttp # or pip -m tinyhttp.async``
+``python -m tinyhttp # or tinyhttp``
 
 Multi-Thread
 
-``pip -m tinyhttp.thread``
+``python -m tinyhttp.thread``
 
 Set Port(The defalut port is 6789.)
 
 
-``pip -m tinyhttp.thread 6666``
+``python -m tinyhttp.thread 6666``
 
 Debug mode
 
-``pip install tinyhttp --debug``
+``python -m tinyhttp --debug``
