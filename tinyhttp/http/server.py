@@ -1,12 +1,19 @@
 from ..tcp import EchoServer
 from ..tools import Signal, list_files, logging, parse_url
 from socket import AF_INET, SOCK_STREAM, socket
+try:
+    from urllib.parse import unquote
+except ImportError:
+    print('Require Python3.5+')
+    exit(1)
 
 
 class HttpServer(EchoServer):
     def _open_file(self, req_head):
         req = req_head.decode('utf-8')
-        Signal.path = req.split(' ')[1]
+        encode_tmp = req.split(' ')[1]
+        Signal.path = unquote(encode_tmp)
+        print('目录是：.%s' % Signal.path)
         try:
             open('.%s' % Signal.path, 'rb')
             Signal.isdir = False
