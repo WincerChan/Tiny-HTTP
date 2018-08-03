@@ -1,6 +1,13 @@
 ===============
 Tiny HTTP
 ===============
+
+|Python-version| |License|
+
+.. |Python-version| image:: https://img.shields.io/badge/python-%3E=3.5-0e83cd.svg?style=flat-square   :alt: Python Version
+.. |License| image:: https://img.shields.io/badge/License-GPL%20v3-blue.svg?style=flat-square   :alt: License
+
+
 Introduction
 ==============
 A socket-based static HTTP server, Support for asynchronous.(Does not support python2)
