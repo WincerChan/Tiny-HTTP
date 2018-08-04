@@ -1,7 +1,7 @@
 from threading import Thread, current_thread
 
 from ..http.server import HttpServer
-from ..tools import Signal, argv
+from ..helper import Signal, argv
 
 
 class ThreadHttpServer(HttpServer):

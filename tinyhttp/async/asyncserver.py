@@ -1,7 +1,7 @@
 import asyncio
 
 from ..http.server import HttpServer
-from ..tools import Signal, argv, logging
+from ..helper import Signal, argv, logging, to_bytes
 
 
 class AsyncHttpServer(HttpServer):
@@ -31,7 +31,8 @@ class AsyncHttpServer(HttpServer):
                 return
             head = self._get_head(req_head)
             head = head.replace('STATUS_CODE', str(self.status))
-            writer.write(head.encode('ascii'))
+            writer.write(to_bytes(head))
+            # writer.write(head.encode('ascii'))
             await self._send_body(writer)
             logging.info('HTTP/1.1 %s GET %s' % (self.status, Signal.path))
             if Signal.debug:
@@ -66,4 +67,3 @@ def main():
     except KeyboardInterrupt:
         Signal.go = False
         print('\x08\x08Good bye', flush=True)
-

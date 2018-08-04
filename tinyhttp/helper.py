@@ -53,7 +53,7 @@ def parse_url(url, file_lengths)->str:
     if Signal.isdir:
         content_type = 'text/html;'
     else:
-        path = url.decode('utf-8').split(' ')[1]
+        path = to_str(url).split(' ')[1]
         suffix = path.split('.')[-1]
         content_type = TYPE.get(suffix, 'application/octet-stream')
     # 目录名
@@ -65,3 +65,13 @@ def parse_url(url, file_lengths)->str:
     params['Date'] = formatdate(usegmt=True)
     params['Server'] = 'TinyHttp'
     return params
+
+
+def to_str(bytes_or_str) -> str:
+    return (bytes_or_str.decode('utf-8') if isinstance(bytes_or_str, bytes)
+            else bytes_or_str)
+
+
+def to_bytes(bytes_or_str) -> bytes:
+    return (bytes_or_str.encode('utf-8') if isinstance(bytes_or_str, str)
+            else bytes_or_str)

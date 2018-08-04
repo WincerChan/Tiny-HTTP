@@ -1,5 +1,5 @@
 from ..tcp import EchoServer
-from ..tools import Signal, list_files, logging, parse_url
+from ..helper import Signal, list_files, logging, parse_url, to_bytes, to_str
 from socket import AF_INET, SOCK_STREAM, socket
 try:
     from urllib.parse import unquote
@@ -10,7 +10,7 @@ except ImportError:
 
 class HttpServer(EchoServer):
     def _open_file(self, req_head):
-        req = req_head.decode('utf-8')
+        req = to_str(req_head)
         encode_tmp = req.split(' ')[1]
         Signal.path = unquote(encode_tmp)
         try:
@@ -35,7 +35,7 @@ class HttpServer(EchoServer):
             except IsADirectoryError:
                 Signal.isdir = True
                 html = list_files()
-                yield html.encode('utf-8')
+                yield to_bytes(html)
             else:
                 for x in fp:
                     yield x
@@ -44,7 +44,7 @@ class HttpServer(EchoServer):
         elif self.status == 405:
             yield b'405 Not Allowed Method.'
         elif self.status == 301:
-            yield ('301 to %s' % Signal.path).encode('utf-8')
+            yield to_bytes('301 to %s' % Signal.path)
 
     def _send_body(self, conn):
         result = self._get_body(conn)
