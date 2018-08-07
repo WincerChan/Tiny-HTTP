@@ -36,6 +36,12 @@ TYPE = {
 
 
 def list_files():
+    """ list_files() -> content
+
+    When user get is a dir, if this dir has a index.html
+    then return index.html file, else return all file
+    in this dir.
+    """
     html = '<h1>%s dictory.</h1><hr/><ul>' % Signal.path
 
     for file in listdir('.' + Signal.path):
@@ -49,6 +55,11 @@ def list_files():
 
 
 def parse_url(url, file_lengths)->str:
+    """ parse_url(url, file_lengths) -> url_param
+
+    Parse the url requested by the user and return the 
+    corresponding header information.
+    """
     params = {}
     if Signal.isdir:
         content_type = 'text/html;'
