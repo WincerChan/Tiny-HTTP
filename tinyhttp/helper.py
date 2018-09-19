@@ -5,6 +5,9 @@ from email.utils import formatdate
 
 
 class Signal:
+    """
+    一些全局变量的标识，采用 class 封装
+    """
     go = True
     isdir = False
     path = ''
