@@ -26,6 +26,7 @@ else:
                         format=('%(asctime)s %(message)s'))
 
 
+# 能识别的所有类型，会帮助浏览器识别这些文件
 TYPE = {
     'css': 'text/css;',
     'png': 'image/png;',
