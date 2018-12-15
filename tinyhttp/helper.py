@@ -1,12 +1,12 @@
 import logging
 from sys import argv
 from os import listdir, path as p
-from email.utils import formatdate
 
 
 class Signal:
     """
-    一些全局变量的标识，采用 class 封装
+    Some global variable,
+    set them into a class.
     """
     go = True
     isdir = False
@@ -26,7 +26,61 @@ else:
                         format=('%(asctime)s %(message)s'))
 
 
-# 能识别的所有类型，会帮助浏览器识别这些文件
+def formatdate(now=None, usegmt=False)-> str:
+    """
+    format time as UTC
+    """
+    import time
+    import datetime
+    if not now:
+        now = time.time()
+    if usegmt:
+        dt = datetime.datetime.fromtimestamp(
+            now, datetime.timezone.utc
+        )  # type: datetime.datetime
+    else:
+        dt = datetime.datetime.utcfromtimestamp(
+            now
+        )  # type: datetime.datetime
+    zone = "-0000"
+
+    months = {
+        1: "Jan",
+        2: "Feb",
+        3: "Mar",
+        4: "Apr",
+        5: "May",
+        6: "Jun",
+        7: "Jul",
+        8: "Aug",
+        9: "Sep",
+        10: "Oct",
+        11: "Nov",
+        12: "Dec"
+    }
+    weeks = {
+        0: "Mon",
+        1: "Tue",
+        2: "Wed",
+        3: "Thu",
+        4: "Fri",
+        5: "Sat",
+        6: "Sun"
+    }
+
+    return "{week}, {d} {m} {y} {h}:{M}:{s:02} {zone}".format(
+        week=weeks.get(dt.weekday()),
+        d=dt.day,
+        m=months.get(dt.month),
+        y=dt.year,
+        h=dt.hour,
+        M=dt.minute,
+        s=dt.second,
+        zone=zone
+    )
+
+
+# there are the all file types that the can display
 TYPE = {
     'css': 'text/css;',
     'png': 'image/png;',
@@ -39,7 +93,7 @@ TYPE = {
 }
 
 
-def list_files():
+def list_files()-> str:
     """ list_files() -> content
 
     When user get is a dir, if this dir has a index.html
@@ -58,10 +112,10 @@ def list_files():
     return html + '</ul>'
 
 
-def parse_url(url, file_lengths)->str:
+def parse_url(url: str, file_lengths: int)->str:
     """ parse_url(url, file_lengths) -> url_param
 
-    Parse the url requested by the user and return the 
+    Parse the url requested by the user and return the
     corresponding header information.
     """
     params = {}
@@ -71,7 +125,7 @@ def parse_url(url, file_lengths)->str:
         path = to_str(url).split(' ')[1]
         suffix = path.split('.')[-1]
         content_type = TYPE.get(suffix, 'application/octet-stream')
-    # 目录名
+    # directory name
     if p.isdir('.'+Signal.path) and not Signal.path.endswith('/'):
         Signal.path += '/'
         params['Location'] = Signal.path

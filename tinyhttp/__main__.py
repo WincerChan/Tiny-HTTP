@@ -1,3 +1,3 @@
-from .async.asyncserver import main
+from .asynchronous.asyncserver import main
 
 main()
